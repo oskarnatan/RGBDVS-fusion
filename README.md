@@ -1,5 +1,8 @@
 # Semantic Segmentation and Depth Estimation with RGB and DVS Sensor Fusion for Multi-view Driving Perception
 
-Implementation codes of "Semantic Segmentation and Depth Estimation with RGB and DVS Sensor Fusion for Multi-view Driving Perception", accepted paper at The 6th Asian Conference on Pattern Recognition (ACPR 2021), Jeju and online, South Korea. http://brain.korea.ac.kr/acpr/accepted_.php
+Implementation codes of a conference paper:
 
-Codes and other auxiliary files will be uploaded after the conference.
+> O. Natan and J. Miura, "Semantic Segmentation and Depth Estimation with RGB and DVS Sensor Fusion for Multi-view Driving Perception", Proc. of the 6th Asian Conference on Pattern Recognition (ACPR), Jeju and online, 2021.
+
+
+Codes and other auxiliary files will be uploaded after the conference. http://brain.korea.ac.kr/acpr/
