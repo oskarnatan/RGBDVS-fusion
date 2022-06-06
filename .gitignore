@@ -1,12 +1,14 @@
 #FOLDER
-trials/read_cifar_FINN/cifar-10-batches-py/*
 dataset/*
 prediction/*
 model/*
-birdview_v2_cache/*
-deeplearning/__pycache__/*
+
+#exception
+!dataset/*.md
+!prediction/*.md
+!model/*.md
 
 
-predict.py
-
-
+#FILES
+*.gz
+*.pyc
