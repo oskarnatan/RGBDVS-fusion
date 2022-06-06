@@ -7,7 +7,6 @@ import yaml
 import pandas as pd
 from tqdm import tqdm
 from collections import OrderedDict
-import cv2
 from torch import torch, optim, utils
 torch.backends.cudnn.benchmark = True
 device = torch.device("cuda:0")
@@ -15,8 +14,8 @@ import arch
 import utilx
 
 
-trainmap = 'Tr2' #Tr1 Tr2 
-valmap = 'Va1' #Va1 Va2
+trainmap = 'Tr1' #Tr1 Tr2 
+valmap = 'Va2' #Va1 Va2
 
 config = {
 	'data_dir'			: ['dataset/'+trainmap[:-1]+'Set/', 'dataset/'+valmap[:-1]+'Set/'],  
@@ -24,13 +23,13 @@ config = {
 	'input'				: ['dvs_f', 'dvs_l', 'dvs_ri', 'dvs_r', 'rgb_f', 'rgb_l', 'rgb_ri', 'rgb_r'],
 	'task'				: ['depth_f', 'depth_l', 'depth_ri', 'depth_r', 'segmentation_f_min', 'segmentation_l_min', 'segmentation_ri_min', 'segmentation_r_min'],
 	'mod_dir'			: 'model/',
-	'arch'				: 'A0', #A0 or A1
+	'arch'				: 'A1', #A0 or A1
 	}
 #load data info
 with open(config['data_info'][0], 'r') as g:
-	info = yaml.load(g, Loader=yaml.FullLoader)
+	info = yaml.load(g)
 with open(config['data_info'][1], 'r') as g:
-	info_val = yaml.load(g, Loader=yaml.FullLoader)
+	info_val = yaml.load(g)
 
 #directory to save the model
 config['mod_dir'] += config['arch']
@@ -62,22 +61,22 @@ def train(batches, model, lossf, metricf, optimizer):
 		batch_Y_pred = model(batch_X)
 
 		#Loss and Metric calculation
-		tot_DE_loss = lossf(batch_Y_pred[0], batch_Y_true[0])
-		tot_DE_loss = torch.add(tot_DE_loss, lossf(batch_Y_pred[1], batch_Y_true[1]))
-		tot_DE_loss = torch.add(tot_DE_loss, lossf(batch_Y_pred[2], batch_Y_true[2]))
-		tot_DE_loss = torch.div(torch.add(tot_DE_loss, lossf(batch_Y_pred[3], batch_Y_true[3])), 4) #average across 4 views
-		tot_DE_metric = metricf(batch_Y_pred[0], batch_Y_true[0])
-		tot_DE_metric = torch.add(tot_DE_metric, metricf(batch_Y_pred[1], batch_Y_true[1]))
-		tot_DE_metric = torch.add(tot_DE_metric, metricf(batch_Y_pred[2], batch_Y_true[2]))
-		tot_DE_metric = torch.div(torch.add(tot_DE_metric, metricf(batch_Y_pred[3], batch_Y_true[3])), 4) #average across 4 views
-		tot_SS_loss = lossf(batch_Y_pred[4], batch_Y_true[4])
-		tot_SS_loss = torch.add(tot_SS_loss, lossf(batch_Y_pred[5], batch_Y_true[5]))
-		tot_SS_loss = torch.add(tot_SS_loss, lossf(batch_Y_pred[6], batch_Y_true[6]))
-		tot_SS_loss = torch.div(torch.add(tot_SS_loss, lossf(batch_Y_pred[7], batch_Y_true[7])), 4) #dirata-rata dari 4 view
-		tot_SS_metric = metricf(batch_Y_pred[4], batch_Y_true[4])
-		tot_SS_metric = torch.add(tot_SS_metric, metricf(batch_Y_pred[5], batch_Y_true[5]))
-		tot_SS_metric = torch.add(tot_SS_metric, metricf(batch_Y_pred[6], batch_Y_true[6]))
-		tot_SS_metric = torch.div(torch.add(tot_SS_metric, metricf(batch_Y_pred[7], batch_Y_true[7])), 4) #dirata-rata dari 4 view
+		tot_DE_loss = lossf[0](batch_Y_pred[0], batch_Y_true[0])
+		tot_DE_loss = torch.add(tot_DE_loss, lossf[0](batch_Y_pred[1], batch_Y_true[1]))
+		tot_DE_loss = torch.add(tot_DE_loss, lossf[0](batch_Y_pred[2], batch_Y_true[2]))
+		tot_DE_loss = torch.div(torch.add(tot_DE_loss, lossf[0](batch_Y_pred[3], batch_Y_true[3])), 4) #average across 4 views
+		tot_DE_metric = metricf[0](batch_Y_pred[0], batch_Y_true[0])
+		tot_DE_metric = torch.add(tot_DE_metric, metricf[0](batch_Y_pred[1], batch_Y_true[1]))
+		tot_DE_metric = torch.add(tot_DE_metric, metricf[0](batch_Y_pred[2], batch_Y_true[2]))
+		tot_DE_metric = torch.div(torch.add(tot_DE_metric, metricf[0](batch_Y_pred[3], batch_Y_true[3])), 4) #average across 4 views
+		tot_SS_loss = lossf[1](batch_Y_pred[4], batch_Y_true[4])
+		tot_SS_loss = torch.add(tot_SS_loss, lossf[1](batch_Y_pred[5], batch_Y_true[5]))
+		tot_SS_loss = torch.add(tot_SS_loss, lossf[1](batch_Y_pred[6], batch_Y_true[6]))
+		tot_SS_loss = torch.div(torch.add(tot_SS_loss, lossf[1](batch_Y_pred[7], batch_Y_true[7])), 4) #dirata-rata dari 4 view
+		tot_SS_metric = metricf[1](batch_Y_pred[4], batch_Y_true[4])
+		tot_SS_metric = torch.add(tot_SS_metric, metricf[1](batch_Y_pred[5], batch_Y_true[5]))
+		tot_SS_metric = torch.add(tot_SS_metric, metricf[1](batch_Y_pred[6], batch_Y_true[6]))
+		tot_SS_metric = torch.div(torch.add(tot_SS_metric, metricf[1](batch_Y_pred[7], batch_Y_true[7])), 4) #dirata-rata dari 4 view
 		total_loss = torch.add(tot_DE_loss, tot_SS_loss)
 		total_metric = torch.add(tot_DE_metric, torch.sub(1,tot_SS_metric)) 
 
@@ -180,9 +179,9 @@ def validate(batches, model, lossf, metricf):
 def main():
 	#IMPORT MODEL ARCHITECTURE
 	if config['arch'] == 'A0': 
-		model = arch0.A0()
+		model = arch.A0()
 	elif config['arch'] == 'A1': 
-		model = arch0.A1() 
+		model = arch.A1() 
 	else:
 		sys.exit("ARCH NOT FOUND............................")
 	model.double().to(device) #load model ke CUDA chace memory
@@ -199,13 +198,13 @@ def main():
 	#create batch of train and val data
 	train_dataset = utilx.datagen(file_ids=info['train_idx'], config=config, data_info=info, input_dir=config['data_dir'][0])
 	train_batches = utils.data.DataLoader(train_dataset,
-		batch_size=config['tensor_dim'][0], 
+		batch_size=16, 
 		shuffle=True,
 		num_workers=4,
 		drop_last=False)
 	val_dataset = utilx.datagen(file_ids=info_val['val_idx'], config=config, data_info=info_val, input_dir=config['data_dir'][1])
 	val_batches = utils.data.DataLoader(val_dataset,
-		batch_size=config['tensor_dim'][0],
+		batch_size=16,
 		shuffle=False,
 		num_workers=4,
 		drop_last=False)
@@ -213,7 +212,6 @@ def main():
 	#create training log
 	log = OrderedDict([
 		('epoch', []),
-		('lrate', []),
 		('train_total_loss', []), 
 		('val_total_loss', []),
 		('train_total_metric', []), 
@@ -234,9 +232,8 @@ def main():
 	#LOOP
 	lowest_monitored_score = float('inf')
 	stop_count = 35
-	while True:
+	for epoch in range(99999999):
 		print('\n=======---=======---=======Epoch:%.4d=======---=======---=======' % (epoch))
-		print("current lr: ", optima.param_groups[0]['lr'])
 
 		#train - val
 		start_time = time.time() 
@@ -248,7 +245,6 @@ def main():
 		scheduler.step(val_log['v_total_m']) #parameter acuan reduce LR adalah val_total_metric
 
 		log['epoch'].append(epoch+1)
-		log['lrate'].append(current_lr)
 		log['train_total_loss'].append(train_log['t_total_l'])
 		log['val_total_loss'].append(val_log['v_total_l'])
 		log['train_total_metric'].append(train_log['t_total_m'])
