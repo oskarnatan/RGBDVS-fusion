@@ -16,13 +16,13 @@ import utilx
 
 trainmap = 'Tr1' #Tr1 Tr2 
 valmap = 'Va2' #Va1 Va2
-
 config = {
 	'data_dir'			: ['dataset/'+trainmap[:-1]+'Set/', 'dataset/'+valmap[:-1]+'Set/'],  
 	'data_info'			: ['dataset/'+trainmap+'/data_infon.yml', 'dataset/'+valmap+'/data_infon.yml'], 
 	'input'				: ['dvs_f', 'dvs_l', 'dvs_ri', 'dvs_r', 'rgb_f', 'rgb_l', 'rgb_ri', 'rgb_r'],
 	'task'				: ['depth_f', 'depth_l', 'depth_ri', 'depth_r', 'segmentation_f_min', 'segmentation_l_min', 'segmentation_ri_min', 'segmentation_r_min'],
-	'mod_dir'			: 'model/',
+	'mod_dir'			: 'model/perception_'+trainmap+valmap+'/',
+	'tensor_dim'		: [6, [2, 3], 128, 128], #NxCxHxW --> C = channel DVS and RGB
 	'arch'				: 'A1', #A0 or A1
 	}
 #load data info
@@ -195,19 +195,55 @@ def main():
 	optima = optim.SGD(params, lr=0.1, momentum=0.9, weight_decay=0.0001)
 	scheduler = optim.lr_scheduler.ReduceLROnPlateau(optima, mode='min', factor=0.5, patience=5, min_lr=0.00001)
 
+	#LOAD DATASET INDEX
+	if info['train_idx'] != None:
+		train_ids = info['train_idx']
+	else:
+		if info['val_idx'] != None:
+			train_ids = info['val_idx']
+		else:
+			train_ids = info['test_idx']
+	if info_val['val_idx'] != None:
+		val_ids = info_val['val_idx']
+	else:
+		if info_val['test_idx'] != None:
+			val_ids = info_val['test_idx']
+		else:
+			val_ids = info_val['train_idx']	
+	#save index
+	sizeval = len(val_ids) / (len(val_ids) + len(train_ids))
+	total_data = info['n_total'] + info_val['n_total']
+	data_idx_dict = {
+		'size_val'		: sizeval,
+		'train_idx'		: train_ids,
+		'val_idx'		: val_ids,
+		'n_train'		: len(train_ids),
+		'n_val'			: len(val_ids),
+		'n_seg_class'	: info['n_seg_class'],
+		'n_total_trainval'	: total_data,
+		'seg_classes'	: info['seg_classes'],
+		'seg_colors'	: info['seg_colors'],
+	}
+
 	#create batch of train and val data
-	train_dataset = utilx.datagen(file_ids=info['train_idx'], config=config, data_info=info, input_dir=config['data_dir'][0])
+	train_dataset = utilx.datagen(file_ids=train_ids, config=config, data_info=info, input_dir=config['data_dir'][0])
 	train_batches = utils.data.DataLoader(train_dataset,
 		batch_size=16, 
 		shuffle=True,
 		num_workers=4,
 		drop_last=False)
-	val_dataset = utilx.datagen(file_ids=info_val['val_idx'], config=config, data_info=info_val, input_dir=config['data_dir'][1])
+	val_dataset = utilx.datagen(file_ids=val_ids, config=config, data_info=info_val, input_dir=config['data_dir'][1])
 	val_batches = utils.data.DataLoader(val_dataset,
 		batch_size=16,
 		shuffle=False,
 		num_workers=4,
 		drop_last=False)
+
+	#SAVE TRAINING CONFIG AND DATA CONFIG
+	with open(config['mod_dir']+'/model_config.yml', 'w') as f:
+		yaml.dump(config, f)
+	with open(config['mod_dir']+'/data_info.yml', 'w') as d:
+		yaml.dump(data_idx_dict, d)
 
 	#create training log
 	log = OrderedDict([

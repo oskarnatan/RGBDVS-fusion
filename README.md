@@ -14,5 +14,4 @@ Steps:
 
 
 To do list:
-- add prediction code
 - code set for W-Net
