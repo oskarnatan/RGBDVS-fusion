@@ -10,7 +10,7 @@ O. Natan and J. Miura, "Semantic Segmentation and Depth Estimation with RGB and 
 
 
 ## Steps:
-1. Download [the dataset](https://drive.google.com/drive/folders/1lJ8Csx_czv03OTqpoyLu87DL1SyfMFP0?usp=sharing) and extract to subfolder dataset
+1. Download [the dataset](https://drive.google.com/file/d/18-eDSd-Jj4DwNi8oUjshgCaYttyNuFdn/view?usp=sharing) and extract to subfolder dataset
 2. Open train.py and check the configuration setting inside
 3. python3 train.py, model and other metadata will be saved in subfolder model
 4. python3 predict.py, prediction result will be saved in subfolder prediction
